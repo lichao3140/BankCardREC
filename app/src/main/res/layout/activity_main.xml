@@ -12,21 +12,18 @@
     tools:context="com.lichao.bankcardrec.MainActivity">
 
     <Button
-        android:id="@+id/process_btn"
+        android:id="@+id/take_picture_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:text="处理"/>
+        android:text="拍照"/>
 
-    <ImageView
-        android:id="@+id/test_image"
+    <Button
+        android:id="@+id/select_picture_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/test"
-        android:layout_marginTop="100dp"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"
-        android:scaleType="fitCenter"/>
+        android:layout_toRightOf="@id/take_picture_btn"
+        android:text="选择图像"/>
 
 </RelativeLayout>

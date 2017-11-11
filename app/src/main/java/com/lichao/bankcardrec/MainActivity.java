@@ -1,30 +1,39 @@
 package com.lichao.bankcardrec;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private String TAG = "OPenCV-Android";
+    private int REQUEST_CAPTURE_IMAGE = 1;
+    private Uri fileUri;
 
+    private Button btn_take_picture;
+    private Button btn_select_picture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = (Button) this.findViewById(R.id.process_btn);
-        button.setOnClickListener(this);
+        btn_take_picture = (Button) this.findViewById(R.id.take_picture_btn);
+        btn_select_picture = (Button) this.findViewById(R.id.select_picture_btn);
+
+        btn_take_picture.setOnClickListener(this);
+        btn_select_picture.setOnClickListener(this);
         iniLoadOpenCV();
     }
 
@@ -39,18 +48,51 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        convert2Gray();
+        int id = view.getId();
+        switch (id) {
+            case R.id.take_picture_btn:
+                start2Camera();
+                break;
+            case R.id.select_picture_btn:
+                pickUpImage();
+                break;
+            default:
+                break;
+        }
     }
 
-    private void convert2Gray() {
-        Bitmap bitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.test);
-        Mat src = new Mat();
-        Mat gray = new Mat();
-        Utils.bitmapToMat(bitmap, src);
-        Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
-        Utils.matToBitmap(gray, bitmap);
-        ImageView imageView = (ImageView)this.findViewById(R.id.test_image);
-        imageView.setImageBitmap(bitmap);
+    /**
+     * 选择图片
+     */
+    private void pickUpImage() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
     }
 
+    /**
+     * 拍照
+     */
+    private void start2Camera() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        fileUri = Uri.fromFile(getSaveFilePath());
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+        startActivityForResult(intent, REQUEST_CAPTURE_IMAGE);
+    }
+
+    private File getSaveFilePath() {
+        String status = Environment.getExternalStorageState();
+        if(!status.equals(Environment.MEDIA_MOUNTED)) {
+            Log.i(TAG, "SD Card is not suitable...");
+            return null;
+        }
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd_hhmmss");
+        String name = df.format(new Date(System.currentTimeMillis()))+ ".jpg";
+        File filedir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "myOcrImages");
+        filedir.mkdirs();
+        String fileName = filedir.getAbsolutePath() + File.separator + name;
+        File imageFile = new File(fileName);
+        return imageFile;
+    }
 }

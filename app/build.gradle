@@ -36,6 +36,7 @@ task nativeLibsToJar(type: Jar, description: 'create a jar archive of the native
     into 'lib/'
 }
 
+
 tasks.withType(org.gradle.api.tasks.compile.JavaCompile) {
     compileTask -> compileTask.dependsOn(nativeLibsToJar)
 }
