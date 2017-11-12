@@ -1,9 +1,11 @@
 package com.lichao.bankcardrec;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -17,6 +19,9 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * OpenCV 银行卡号识别
+ */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private String TAG = "OPenCV-Android";
     private int REQUEST_CAPTURE_IMAGE = 1;
@@ -34,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         btn_take_picture.setOnClickListener(this);
         btn_select_picture.setOnClickListener(this);
+
         iniLoadOpenCV();
     }
 
@@ -94,5 +100,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String fileName = filedir.getAbsolutePath() + File.separator + name;
         File imageFile = new File(fileName);
         return imageFile;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
+            if(data == null) {
+                Intent intent = new Intent(getApplicationContext(), CardOCRActivity.class);
+                intent.putExtra("PICTURE-URL", fileUri);
+                startActivity(intent);
+            } else {
+                Uri uri = data.getData();
+                Intent intent = new Intent(getApplicationContext(), CardOCRActivity.class);
+                File f = new File(getRealPath(uri));
+                intent.putExtra("PICTURE-URL", Uri.fromFile(f));
+                startActivity(intent);
+            }
+        }
+    }
+
+    private String getRealPath(Uri uri) {
+        String filePath = null;
+        if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT){//4.4及以上
+            String wholeID = DocumentsContract.getDocumentId(uri);
+            String id = wholeID.split(":")[1];
+            String[] column = { MediaStore.Images.Media.DATA };
+            String sel = MediaStore.Images.Media._ID + "=?";
+            Cursor cursor = getApplicationContext().getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, column,
+                    sel, new String[] { id }, null);
+            int columnIndex = cursor.getColumnIndex(column[0]);
+            if (cursor.moveToFirst()) {
+                filePath = cursor.getString(columnIndex);
+            }
+            cursor.close();
+        }else{//4.4以下，即4.4以下获取路径的方法
+            String[] projection = { MediaStore.Images.Media.DATA };
+            Cursor cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            filePath = cursor.getString(column_index);
+        }
+        Log.i("CV_TAG", "selected image path : " + filePath);
+        return filePath;
     }
 }
